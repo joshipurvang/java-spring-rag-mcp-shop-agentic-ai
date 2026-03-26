@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ShopSmart AI — Architecture Diagrams</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* ═══════════════════════════════════════════
+   DESIGN TOKENS — edit colours here
+═══════════════════════════════════════════ */
+:root {
+  --bg:          #0D1117;
+  --surface:     #161B22;
+  --surface2:    #1C2333;
+  --border:      #30363D;
+  --border-dim:  #21262D;
+
+  --purple:      #7C6FF7;
+  --purple-dim:  #2D2B55;
+  --purple-text: #C5C0FB;
+
+  --teal:        #2DD4BF;
+  --teal-dim:    #0D3330;
+  --teal-text:   #99F6E4;
+
+  --coral:       #F87171;
+  --coral-dim:   #3D1515;
+  --coral-text:  #FCA5A5;
+
+  --pink:        #F472B6;
+  --pink-dim:    #3D1030;
+  --pink-text:   #FBCFE8;
+
+  --green:       #4ADE80;
+  --green-dim:   #0D2E1A;
+  --green-text:  #BBF7D0;
+
+  --amber:       #FBBF24;
+  --amber-dim:   #2D2000;
+  --amber-text:  #FDE68A;
+
+  --gray:        #6B7280;
+  --gray-dim:    #1F2937;
+  --gray-text:   #D1D5DB;
+
+  --white:       #F0F6FC;
+  --muted:       #8B949E;
+  --mono:        'JetBrains Mono', monospace;
+  --sans:        'DM Sans', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: var(--sans);
+  padding: 40px 24px;
+  line-height: 1.5;
+}
+
+/* ── page nav ── */
+.page-title {
+  text-align: center;
+  margin-bottom: 48px;
+}
+.page-title h1 {
+  font-size: 28px; font-weight: 700; color: var(--white); letter-spacing: -0.5px;
+}
+.page-title p { font-size: 14px; color: var(--muted); margin-top: 6px; }
+
+.nav-tabs {
+  display: flex; justify-content: center; gap: 8px; margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+.tab-btn {
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--muted); font-family: var(--sans); font-size: 13px;
+  padding: 8px 18px; border-radius: 20px; cursor: pointer;
+  transition: all .2s;
+}
+.tab-btn:hover { border-color: var(--purple); color: var(--purple); }
+.tab-btn.active {
+  background: var(--purple-dim); border-color: var(--purple);
+  color: var(--purple-text);
+}
+
+/* ── diagram panels ── */
+.diagram { display: none; max-width: 900px; margin: 0 auto; }
+.diagram.visible { display: block; }
+
+/* ── EDITABLE HINT ── */
+.edit-hint {
+  text-align: center; font-size: 12px; color: var(--muted);
+  margin-bottom: 24px; font-family: var(--mono);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; padding: 8px 16px; display: inline-block;
+  width: 100%;
+}
+
+/* ── shared components ── */
+.layer {
+  display: flex; align-items: stretch; gap: 12px;
+  margin-bottom: 0; position: relative;
+}
+.layer-label {
+  width: 56px; min-width: 56px;
+  display: flex; align-items: center; justify-content: flex-end;
+  padding-right: 10px;
+}
+.layer-label span {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 1.5px; writing-mode: horizontal-tb;
+  color: var(--muted);
+}
+.layer-body { flex: 1; }
+
+.row { display: flex; gap: 10px; align-items: stretch; }
+
+/* chips / cards */
+.chip {
+  border-radius: 10px; padding: 10px 14px;
+  border: 1px solid; font-size: 13px; font-weight: 500;
+  display: flex; flex-direction: column; gap: 3px;
+  transition: transform .15s, box-shadow .15s;
+  cursor: default;
+}
+.chip:hover { transform: translateY(-2px); }
+.chip .chip-title { font-weight: 600; font-size: 13px; }
+.chip .chip-sub   { font-size: 11px; opacity: .75; font-family: var(--mono); }
+
+.chip-purple { background: var(--purple-dim); border-color: var(--purple); color: var(--purple-text); }
+.chip-teal   { background: var(--teal-dim);   border-color: var(--teal);   color: var(--teal-text);   }
+.chip-coral  { background: var(--coral-dim);  border-color: var(--coral);  color: var(--coral-text);  }
+.chip-pink   { background: var(--pink-dim);   border-color: var(--pink);   color: var(--pink-text);   }
+.chip-green  { background: var(--green-dim);  border-color: var(--green);  color: var(--green-text);  }
+.chip-amber  { background: var(--amber-dim);  border-color: var(--amber);  color: var(--amber-text);  }
+.chip-gray   { background: var(--gray-dim);   border-color: var(--gray);   color: var(--gray-text);   }
+.chip-ghost  { background: transparent; border-color: var(--border); border-style: dashed; color: var(--muted); }
+
+/* hero agent chip */
+.chip-hero {
+  background: linear-gradient(135deg, #1A1560 0%, #2D2B55 100%);
+  border: 2px solid var(--purple);
+  border-radius: 14px; padding: 16px 20px;
+  color: var(--purple-text); flex: 1;
+}
+.chip-hero .hero-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; color: var(--white); }
+.chip-hero .hero-steps { display: flex; gap: 8px; }
+.hero-step {
+  flex: 1; background: rgba(124,111,247,.18); border: 1px solid rgba(124,111,247,.35);
+  border-radius: 8px; padding: 8px 10px; text-align: center;
+}
+.hero-step .step-num { font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--purple); display: block; }
+.hero-step .step-label { font-size: 11px; color: var(--purple-text); display: block; margin-top: 2px; }
+.hero-step .step-sub   { font-size: 10px; color: var(--muted); display: block; margin-top: 2px; font-family: var(--mono); }
+
+/* connector arrows */
+.arrow-row {
+  display: flex; align-items: center; justify-content: center;
+  padding: 6px 0 6px 68px; gap: 0;
+}
+.arrow-down {
+  display: flex; flex-direction: column; align-items: center;
+  color: var(--border); flex: 1;
+}
+.arrow-down::after {
+  content: ''; display: block;
+  width: 1px; height: 24px;
+  background: var(--border);
+  position: relative;
+}
+.arrow-single {
+  display: flex; flex-direction: column; align-items: center;
+  color: var(--muted); font-size: 16px; margin: 4px auto;
+  padding-left: 68px;
+}
+.arrow-single::before {
+  content: '';
+  display: block; width: 1px; height: 20px;
+  background: var(--border);
+}
+.arrow-single::after {
+  content: '▼'; font-size: 10px;
+}
+
+/* tool annotation band */
+.annotation-band {
+  border: 1px dashed var(--coral); border-radius: 8px;
+  padding: 7px 14px; text-align: center;
+  font-size: 11px; color: var(--coral-text); font-family: var(--mono);
+  margin-top: 6px;
+}
+
+/* rag flow callout */
+.flow-callout {
+  border: 1px dashed var(--green); border-radius: 8px;
+  padding: 10px 14px; flex: 1;
+  font-size: 11px; color: var(--green-text); font-family: var(--mono);
+  line-height: 1.8;
+}
+.flow-callout strong { color: var(--green); display: block; margin-bottom: 4px; font-size: 12px; }
+
+/* concepts panel */
+.concepts-panel {
+  border: 1px solid var(--border); border-radius: 14px;
+  padding: 20px; margin-top: 8px;
+}
+.concepts-title {
+  text-align: center; font-size: 13px; font-weight: 600;
+  color: var(--muted); letter-spacing: 1px; text-transform: uppercase;
+  margin-bottom: 14px; font-family: var(--mono);
+}
+.concepts-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.concept-card {
+  border-radius: 10px; padding: 14px 12px; border: 1px solid;
+  font-size: 12px; line-height: 1.7;
+}
+.concept-card .c-title { font-weight: 700; font-size: 13px; margin-bottom: 8px; display: block; }
+.concept-card li { list-style: none; padding: 0; }
+.concept-card li::before { content: '→ '; opacity: .6; font-family: var(--mono); }
+
+/* section spacing */
+.section { margin-bottom: 8px; }
+.section + .section { margin-top: 0; }
+
+/* diagram title block */
+.diagram-header {
+  text-align: center; margin-bottom: 28px;
+  border-bottom: 1px solid var(--border); padding-bottom: 20px;
+}
+.diagram-header h2 { font-size: 20px; font-weight: 700; color: var(--white); }
+.diagram-header p  { font-size: 13px; color: var(--muted); margin-top: 4px; font-family: var(--mono); }
+
+/* ════════════════════════════════════
+   DIAGRAM 2 — Agentic Loop
+════════════════════════════════════ */
+.trace-container { display: flex; gap: 24px; }
+.trace-spine {
+  display: flex; flex-direction: column; gap: 0;
+  min-width: 260px; flex: 1;
+}
+.trace-step {
+  display: flex; align-items: stretch; gap: 0; position: relative;
+}
+.trace-step::before {
+  content: ''; position: absolute; left: 19px; top: 42px;
+  width: 1px; height: calc(100% + 0px);
+  background: var(--border); z-index: 0;
+}
+.trace-step:last-child::before { display: none; }
+.step-bullet {
+  width: 40px; min-width: 40px; display: flex;
+  flex-direction: column; align-items: center; padding-top: 12px; z-index: 1;
+}
+.bullet-circle {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid; display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 9px; font-weight: 700;
+  background: var(--bg);
+}
+.step-content {
+  flex: 1; padding: 10px 0 20px 8px;
+}
+.step-who {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px;
+}
+.step-title {
+  font-size: 14px; font-weight: 600; color: var(--white); margin-bottom: 4px;
+}
+.step-detail {
+  font-size: 12px; color: var(--muted); font-family: var(--mono); line-height: 1.6;
+}
+.step-result {
+  margin-top: 6px; padding: 6px 10px; border-radius: 6px;
+  font-size: 11px; font-family: var(--mono); border-left: 3px solid;
+}
+
+/* trace sidebar */
+.trace-sidebar { width: 240px; min-width: 240px; display: flex; flex-direction: column; gap: 10px; }
+.sidebar-card {
+  border-radius: 10px; padding: 12px 14px; border: 1px solid;
+  font-size: 12px; line-height: 1.6;
+}
+.sidebar-card .s-title { font-weight: 700; font-size: 12px; margin-bottom: 6px; display: block; font-family: var(--mono); }
+.sidebar-card .s-body  { color: var(--muted); font-size: 11px; line-height: 1.7; }
+
+.insight-bar {
+  border: 1px solid var(--purple); border-radius: 10px;
+  padding: 12px 16px; text-align: center; margin-top: 16px;
+  background: var(--purple-dim);
+  font-size: 13px; font-weight: 600; color: var(--purple-text);
+  font-family: var(--mono);
+}
+
+/* ════════════════════════════════════
+   DIAGRAM 3 — RAG vs Keyword
+════════════════════════════════════ */
+.rag-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.rag-side { padding: 0 16px; }
+.rag-side + .rag-side { border-left: 1px solid var(--border); }
+.rag-side-title {
+  text-align: center; font-size: 13px; font-weight: 700;
+  font-family: var(--mono); margin-bottom: 16px; padding: 8px;
+  border-radius: 8px; letter-spacing: .5px;
+}
+.rag-query-bar {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px; text-align: center;
+  margin-bottom: 16px; font-size: 14px; font-weight: 600;
+  grid-column: 1 / -1; color: var(--white);
+}
+.rag-query-bar span { font-family: var(--mono); font-size: 13px; color: var(--amber); }
+.rag-step {
+  border-radius: 8px; padding: 10px 12px; margin-bottom: 8px;
+  border: 1px solid; font-size: 12px; line-height: 1.6; font-family: var(--mono);
+}
+.rag-arrow {
+  text-align: center; color: var(--muted); font-size: 18px;
+  margin: 2px 0; display: block;
+}
+.rag-result {
+  border-radius: 10px; padding: 14px; margin-top: 8px;
+  border: 2px solid; text-align: center;
+}
+.rag-result .r-label { font-size: 11px; font-family: var(--mono); opacity: .8; display: block; margin-bottom: 4px; }
+.rag-result .r-value { font-size: 16px; font-weight: 700; display: block; }
+.rag-result .r-sub   { font-size: 11px; opacity: .75; display: block; margin-top: 4px; font-family: var(--mono); }
+
+.rag-footer {
+  grid-column: 1 / -1; text-align: center;
+  border: 1px solid var(--green); background: var(--green-dim);
+  border-radius: 10px; padding: 12px; margin-top: 16px;
+  font-size: 13px; font-weight: 600; color: var(--green-text); font-family: var(--mono);
+}
+
+/* responsive */
+@media (max-width: 700px) {
+  .concepts-grid { grid-template-columns: 1fr 1fr; }
+  .trace-container { flex-direction: column; }
+  .trace-sidebar { width: 100%; min-width: unset; }
+  .rag-compare { grid-template-columns: 1fr; }
+  .rag-side + .rag-side { border-left: none; border-top: 1px solid var(--border); padding-top: 16px; margin-top: 8px; }
+  .hero-steps { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<div class="page-title">
+  <h1>ShopSmart AI Agent</h1>
+  <p>Architecture Diagrams · Spring AI 1.0.0 · RAG · Redis Vector DB · MCP Server · Agentic AI</p>
+</div>
+
+<div class="nav-tabs">
+  <button class="tab-btn active" onclick="show('arch')">Architecture overview</button>
+  <button class="tab-btn" onclick="show('loop')">Agentic loop trace</button>
+  <button class="tab-btn" onclick="show('rag')">RAG vs keyword search</button>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     DIAGRAM 1 — ARCHITECTURE OVERVIEW
+════════════════════════════════════════════════════ -->
+<div class="diagram visible" id="arch">
+  <p class="edit-hint">All text below is plain HTML — click any element in your editor to update labels, colours, or add rows</p>
+
+  <div class="diagram-header">
+    <h2>High level architecture</h2>
+    <p>Spring Boot 3.4.3 · Spring AI 1.0.0 GA · Java 21 · Ollama · Redis Stack</p>
+  </div>
+
+  <!-- TIER: CLIENT -->
+  <div class="section layer">
+    <div class="layer-label"><span>CLIENT</span></div>
+    <div class="layer-body">
+      <div class="row">
+        <div class="chip chip-purple" style="flex:1">
+          <span class="chip-title">REST client</span>
+          <span class="chip-sub">POST /api/chat</span>
+        </div>
+        <div class="chip chip-pink" style="flex:1">
+          <span class="chip-title">Claude Desktop</span>
+          <span class="chip-sub">MCP client · GET /sse</span>
+        </div>
+        <div class="chip chip-pink" style="flex:1">
+          <span class="chip-title">Cursor IDE</span>
+          <span class="chip-sub">MCP client · GET /sse</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-single"></div>
+
+  <!-- TIER: API -->
+  <div class="section layer">
+    <div class="layer-label"><span>API</span></div>
+    <div class="layer-body">
+      <div class="row">
+        <div class="chip chip-teal" style="flex:1">
+          <span class="chip-title">ShopController</span>
+          <span class="chip-sub">/api/chat · /api/demo · /api/products</span>
+        </div>
+        <div class="chip chip-pink" style="flex:2">
+          <span class="chip-title">MCP Server &nbsp;·&nbsp; spring-ai-starter-mcp-server-webmvc</span>
+          <span class="chip-sub">SSE stream: GET /sse · messages: POST /mcp/message · auto-registers @Tool methods</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-single"></div>
+
+  <!-- TIER: AGENT -->
+  <div class="section layer">
+    <div class="layer-label"><span>AGENT</span></div>
+    <div class="layer-body">
+      <div class="chip-hero">
+        <div class="hero-title">ShopAgent — Spring AI ChatClient + Ollama llama3.2</div>
+        <div class="hero-steps">
+          <div class="hero-step">
+            <span class="step-num">1</span>
+            <span class="step-label">Receive message</span>
+            <span class="step-sub">embed + read tools</span>
+          </div>
+          <div class="hero-step">
+            <span class="step-num">2</span>
+            <span class="step-label">LLM picks tool</span>
+            <span class="step-sub">autonomous decision</span>
+          </div>
+          <div class="hero-step">
+            <span class="step-num">3</span>
+            <span class="step-label">Call + observe</span>
+            <span class="step-sub">loop until done ↻</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-single"></div>
+
+  <!-- TIER: TOOLS -->
+  <div class="section layer">
+    <div class="layer-label"><span>TOOLS</span></div>
+    <div class="layer-body">
+      <div class="row">
+        <div class="chip chip-coral" style="flex:1.4">
+          <span class="chip-title">semanticSearch(query)</span>
+          <span class="chip-sub">@Tool · RAG via Redis vectors · cosine similarity</span>
+        </div>
+        <div class="chip chip-coral" style="flex:1">
+          <span class="chip-title">checkStock(productId)</span>
+          <span class="chip-sub">@Tool · real-time stock</span>
+        </div>
+        <div class="chip chip-coral" style="flex:1">
+          <span class="chip-title">placeOrder(id, qty, email)</span>
+          <span class="chip-sub">@Tool · creates order</span>
+        </div>
+        <div class="chip chip-coral" style="flex:.9">
+          <span class="chip-title">getOrderStatus(id)</span>
+          <span class="chip-sub">@Tool · track</span>
+        </div>
+        <div class="chip chip-coral" style="flex:.8">
+          <span class="chip-title">listAllProducts()</span>
+          <span class="chip-sub">@Tool · browse</span>
+        </div>
+      </div>
+      <div class="annotation-band">
+        All @Tool methods register with ChatClient (agent) AND MCP server automatically from the same codebase
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-single"></div>
+
+  <!-- TIER: RAG -->
+  <div class="section layer">
+    <div class="layer-label"><span>RAG</span></div>
+    <div class="layer-body">
+      <div class="row">
+        <div class="chip chip-green" style="flex:1.6">
+          <span class="chip-title">Redis Vector Store &nbsp;:6379</span>
+          <span class="chip-sub">Products embedded at startup via nomic-embed-text · 768-dim vectors · top-4 returned per query</span>
+        </div>
+        <div class="flow-callout">
+          <strong>RAG flow</strong>
+          user query<br/>
+          → embed (nomic-embed-text)<br/>
+          → cosine similarity search Redis<br/>
+          → top-4 matching product docs<br/>
+          → injected as LLM context<br/>
+          → grounded answer, no hallucination
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-single"></div>
+
+  <!-- TIER: LLM -->
+  <div class="section layer">
+    <div class="layer-label"><span>LLM</span></div>
+    <div class="layer-body">
+      <div class="row">
+        <div class="chip chip-amber" style="flex:1">
+          <span class="chip-title">Ollama &nbsp;:11434</span>
+          <span class="chip-sub">llama3.2 — chat + reasoning · local · free · private</span>
+        </div>
+        <div class="chip chip-amber" style="flex:1">
+          <span class="chip-title">nomic-embed-text</span>
+          <span class="chip-sub">embedding model for RAG · 768-dimensional vectors</span>
+        </div>
+        <div class="chip chip-ghost" style="flex:.7">
+          <span class="chip-title">OpenAI / Claude</span>
+          <span class="chip-sub">swap 1 property to switch provider</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONCEPTS PANEL -->
+  <div class="concepts-panel" style="margin-top: 24px;">
+    <div class="concepts-title">Core concepts demonstrated</div>
+    <div class="concepts-grid">
+      <div class="concept-card chip-purple">
+        <span class="c-title">Agentic loop</span>
+        <ul>
+          <li>LLM decides which tools to call</li>
+          <li>Zero routing code written</li>
+          <li>think → act → observe</li>
+          <li>loop repeats until done</li>
+        </ul>
+      </div>
+      <div class="concept-card chip-green">
+        <span class="c-title">RAG</span>
+        <ul>
+          <li>Products embedded at startup</li>
+          <li>Cosine similarity search</li>
+          <li>Semantic, not keyword match</li>
+          <li>Grounded answers only</li>
+        </ul>
+      </div>
+      <div class="concept-card chip-coral">
+        <span class="c-title">@Tool annotation</span>
+        <ul>
+          <li>Description = routing logic</li>
+          <li>LLM reads it to decide calls</li>
+          <li>Precise text → correct chains</li>
+          <li>Vague text → wrong calls</li>
+        </ul>
+      </div>
+      <div class="concept-card chip-pink">
+        <span class="c-title">MCP server</span>
+        <ul>
+          <li>Same tools exposed via /sse</li>
+          <li>Claude Desktop connects here</li>
+          <li>Cursor IDE connects here</li>
+          <li>One @Bean to register all</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════
+     DIAGRAM 2 — AGENTIC LOOP TRACE
+════════════════════════════════════════════════════ -->
+<div class="diagram" id="loop">
+  <p class="edit-hint">Edit step titles, details, and result text directly in the HTML below</p>
+
+  <div class="diagram-header">
+    <h2>Agentic loop — end-to-end trace</h2>
+    <p>"Find a laptop for ML work, check stock, and order 1 for sam@example.com"</p>
+  </div>
+
+  <div class="trace-container">
+
+    <div class="trace-spine">
+
+      <!-- Step 1 -->
+      <div class="trace-step">
+        <div class="step-bullet">
+          <div class="bullet-circle" style="border-color:var(--gray);color:var(--gray)">1</div>
+        </div>
+        <div class="step-content">
+          <div class="step-who" style="color:var(--gray)">User</div>
+          <div class="step-title">Query arrives via REST</div>
+          <div class="step-detail">"Find a laptop for ML work, check stock, and order 1 for sam@example.com"</div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="trace-step">
+        <div class="step-bullet">
+          <div class="bullet-circle" style="border-color:var(--purple);color:var(--purple)">2</div>
+        </div>
+        <div class="step-content">
+          <div class="step-who" style="color:var(--purple)">Spring AI ChatClient</div>
+          <div class="step-title">Sends message + all @Tool descriptions to LLM</div>
+          <div class="step-detail">LLM reads 5 tool descriptions → decides: "I should call semanticSearch first"</div>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="trace-step">
+        <div class="step-bullet">
+          <div class="bullet-circle" style="border-color:var(--coral);color:var(--coral)">3</div>
+        </div>
+        <div class="step-content">
+          <div class="step-who" style="color:var(--coral)">Tool call #1</div>
+          <div class="step-title">semanticSearch("laptop for ML work")</div>
+          <div class="step-detail">embed query → cosine search Redis Vector Store</div>
+          <div class="step-result" style="background:var(--coral-dim);border-color:var(--coral);color:var(--coral-text)">
+            → found: Dell XPS 15 OLED · ID: P002 · $1799.99 · matched on "RTX 4070, creative work, OLED"
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="trace-step">
+        <div class="step-bullet">
+          <div class="bullet-circle" style="border-color:var(--green);color:var(--green)">4</div>
+        </div>
+        <div class="step-content">
+          <div class="step-who" style="color:var(--green)">RAG layer</div>
+          <div class="step-title">Semantic match — not keyword match</div>
+          <div class="step-detail">User said "ML work" — product says "RTX 4070, creative work, OLED"<br/>Vector cosine similarity bridged the semantic gap</div>
+        </div>
+      </div>
+
+      <!-- Step 5 -->
+      <div class="trace-step">
+        <div class="step-bullet">
+          <div class="bullet-circle" style="border-color:var(--purple);color:var(--purple)">5</div>
+        </div>
+        <div class="step-content">
+          <div class="step-who" style="color:var(--purple)">LLM — autonomous decision</div>
+          <div class="step-title">Reads result, decides next tool</div>
+          <div class="step-detail">reads @Tool desc: "always call checkStock BEFORE ordering" → calls checkStock</div>
+        </div>
+      </div>
+
+      <!-- Step 6 -->
+      <div class="trace-step">
+        <div class="step-bullet">
+          <div class="bullet-circle" style="border-color:var(--coral);color:var(--coral)">6</div>
+        </div>
+        <div class="step-content">
+          <div class="step-who" style="color:var(--coral)">Tool call #2</div>
+          <div class="step-title">checkStock("P002")</div>
+          <div class="step-result" style="background:var(--coral-dim);border-color:var(--coral);color:var(--coral-text)">
+            → Dell XPS 15 OLED · 5 units · IN STOCK · $1799.99
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 7 -->
+      <div class="trace-step">
+        <div class="step-bullet">
+          <div class="bullet-circle" style="border-color:var(--coral);color:var(--coral)">7</div>
+        </div>
+        <div class="step-content">
+          <div class="step-who" style="color:var(--coral)">Tool call #3</div>
+          <div class="step-title">placeOrder("P002", 1, "sam@example.com")</div>
+          <div class="step-result" style="background:var(--coral-dim);border-color:var(--coral);color:var(--coral-text)">
+            → Order ORD-1001 confirmed · $1799.99 · email sent to sam@example.com
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 8 -->
+      <div class="trace-step">
+        <div class="step-bullet">
+          <div class="bullet-circle" style="border-color:var(--teal);color:var(--teal)">8</div>
+        </div>
+        <div class="step-content">
+          <div class="step-who" style="color:var(--teal)">LLM — final answer</div>
+          <div class="step-title">Synthesises friendly response from all tool results</div>
+          <div class="step-detail">"Great! I've found and ordered the Dell XPS 15 OLED for you. Order ORD-1001 is confirmed at $1799.99. You'll receive a confirmation at sam@example.com."</div>
+        </div>
+      </div>
+
+      <div class="insight-bar">
+        Zero routing code — the LLM decided steps 3 → 6 → 7 by reading @Tool description text
+      </div>
+    </div>
+
+    <!-- sidebar -->
+    <div class="trace-sidebar">
+      <div class="sidebar-card" style="background:var(--purple-dim);border-color:var(--purple)">
+        <span class="s-title" style="color:var(--purple-text)">Why "agentic"?</span>
+        <div class="s-body">A normal chatbot answers from training data. This agent autonomously decides which tools to call and loops until it has everything it needs. That think → act → observe cycle is the agent pattern.</div>
+      </div>
+      <div class="sidebar-card" style="background:var(--green-dim);border-color:var(--green)">
+        <span class="s-title" style="color:var(--green-text)">RAG role</span>
+        <div class="s-body">semanticSearch() doesn't do keyword matching. It embeds the query, searches Redis vectors by cosine similarity, and returns semantically related products even when no exact words match.</div>
+      </div>
+      <div class="sidebar-card" style="background:var(--coral-dim);border-color:var(--coral)">
+        <span class="s-title" style="color:var(--coral-text)">@Tool descriptions</span>
+        <div class="s-body">The LLM reads the description string on each @Tool method to decide when to call it. Write them precisely. "Always call checkStock before ordering" is why step 6 happened before step 7.</div>
+      </div>
+      <div class="sidebar-card" style="background:var(--pink-dim);border-color:var(--pink)">
+        <span class="s-title" style="color:var(--pink-text)">MCP server</span>
+        <div class="s-body">The same placeOrder(), checkStock(), and semanticSearch() methods are exposed via /sse. Claude Desktop can call them directly without going through ShopAgent at all.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════
+     DIAGRAM 3 — RAG VS KEYWORD
+════════════════════════════════════════════════════ -->
+<div class="diagram" id="rag">
+  <p class="edit-hint">Edit the query, steps, and result labels directly in the HTML</p>
+
+  <div class="diagram-header">
+    <h2>RAG vs keyword search</h2>
+    <p>Same query · same catalog · completely different results</p>
+  </div>
+
+  <div class="rag-compare">
+    <!-- shared query bar -->
+    <div class="rag-query-bar" style="grid-column:1/-1">
+      User query: <span>"headphones for long-haul flights"</span>
+    </div>
+
+    <!-- LEFT: keyword -->
+    <div class="rag-side">
+      <div class="rag-side-title" style="background:var(--coral-dim);color:var(--coral-text);border:1px solid var(--coral)">
+        Keyword search — before
+      </div>
+      <div class="rag-step" style="background:var(--surface2);border-color:var(--border);color:var(--muted)">
+        catalog.contains("headphones")<br/>
+        + contains("long-haul")<br/>
+        + contains("flights")
+      </div>
+      <span class="rag-arrow">↓</span>
+      <div class="rag-step" style="background:var(--coral-dim);border-color:var(--coral);color:var(--coral-text)">
+        none of those exact words appear<br/>
+        in any product name or description
+      </div>
+      <span class="rag-arrow">↓</span>
+      <div class="rag-result" style="background:var(--coral-dim);border-color:var(--coral)">
+        <span class="r-label" style="color:var(--coral-text)">Result</span>
+        <span class="r-value" style="color:var(--coral)">0 products found</span>
+        <span class="r-sub" style="color:var(--coral-text)">product exists but was invisible</span>
+      </div>
+    </div>
+
+    <!-- RIGHT: RAG -->
+    <div class="rag-side">
+      <div class="rag-side-title" style="background:var(--green-dim);color:var(--green-text);border:1px solid var(--green)">
+        Vector / RAG search — now
+      </div>
+      <div class="rag-step" style="background:var(--surface2);border-color:var(--border);color:var(--muted)">
+        embed("headphones for long-haul flights")<br/>
+        → 768-dimensional vector<br/>
+        via nomic-embed-text
+      </div>
+      <span class="rag-arrow">↓</span>
+      <div class="rag-step" style="background:var(--green-dim);border-color:var(--green);color:var(--green-text)">
+        cosine similarity search in Redis<br/>
+        matches: "noise cancellation · long battery<br/>
+        · premium audio · wireless comfort"
+      </div>
+      <span class="rag-arrow">↓</span>
+      <div class="rag-result" style="background:var(--green-dim);border-color:var(--green)">
+        <span class="r-label" style="color:var(--green-text)">Result</span>
+        <span class="r-value" style="color:var(--green)">Sony WH-1000XM5 · $349.99</span>
+        <span class="r-sub" style="color:var(--green-text)">found by semantic intent, not word match · LLM answers with real data · no hallucination</span>
+      </div>
+    </div>
+
+    <!-- footer -->
+    <div class="rag-footer">
+      The difference is not marginal — it's the difference between finding the product and returning nothing
+    </div>
+  </div>
+
+  <!-- How it works explainer -->
+  <div style="margin-top:28px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+    <div class="chip chip-green" style="padding:16px">
+      <span class="chip-title" style="margin-bottom:8px;display:block">1. Index at startup</span>
+      <span class="chip-sub" style="line-height:1.8">
+        VectorStoreConfig runs on boot.<br/>
+        Each product → toEmbeddingText()<br/>
+        → nomic-embed-text model<br/>
+        → 768-dim vector stored in Redis
+      </span>
+    </div>
+    <div class="chip chip-green" style="padding:16px">
+      <span class="chip-title" style="margin-bottom:8px;display:block">2. Search at query time</span>
+      <span class="chip-sub" style="line-height:1.8">
+        semanticSearch() @Tool fires.<br/>
+        User query embedded same way.<br/>
+        Redis finds closest product vectors<br/>
+        by cosine angle — top 4 returned.
+      </span>
+    </div>
+    <div class="chip chip-green" style="padding:16px">
+      <span class="chip-title" style="margin-bottom:8px;display:block">3. Ground the LLM</span>
+      <span class="chip-sub" style="line-height:1.8">
+        Top-4 product texts injected<br/>
+        into LLM context window.<br/>
+        LLM answers from real data.<br/>
+        No hallucination possible.
+      </span>
+    </div>
+  </div>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.diagram').forEach(d => d.classList.remove('visible'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('visible');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
